@@ -15,13 +15,15 @@ catch {
 }
 
 ### VARIABLES ####
+#$subscriptionID = "YOUR-SUBSCRIPTION-ID" 
+#$tenantID = "YOUR-TENANT-ID"
 $hostpoolname = "Personal-Hostpool-ZF" 
 $rgname = "RG-ZF-AVD"
 $tempo = 120 #TIME IN SECONDS TO WAIT BETWEEN MESSAGE AND USER LOGOFF ACTION
 $msgtitle = "Warning! Session is going to be disconnected." #message title
 $msgbody = "All virtual machines are going to shutdown in 120 seconds, please log-off your computers." #message body
 
-#GET AVD SESSION HOST VM LIST
+#GET WVD SESSION HOST VM LIST
 $sessionhost = Get-AzWvdSessionHost -HostPoolName $hostpoolname -ResourceGroupName $rgname
 
 #FOR EACH SESSION HOST, GET USER SESSIONS AND TAKE ACTION
