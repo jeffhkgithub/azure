@@ -12,5 +12,8 @@ LABEL org.label-schema.version=$APP_VERSION
 ENV NODE_ENV="production"
 COPY --from=source /node/weather-app /node/weather-app
 WORKDIR /node/weather-app
+# Run the container as system user
+RUN adduser -S node_user
+USER node_user
 EXPOSE 3000
 ENTRYPOINT ["./bin/www"]
