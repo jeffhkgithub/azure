@@ -1,0 +1,8 @@
+# Log in to Docker Hub
+docker login -u [DOCKER_HUB_USERNAME]
+
+# Get the Git Commit Hash
+git log -1 --pretty=%H
+
+# Push Both Images to Docker Hub
+docker image push [USERNAME]/weather-app:[HASH]
