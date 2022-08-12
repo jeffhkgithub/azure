@@ -1,0 +1,193 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualMachineScaleSets_VMSS_name": {
+            "defaultValue": "MYVMSS2",
+            "type": "String"
+        },
+        "galleries_trustedlaunch_externalid": {
+            "defaultValue": "/subscriptions/434a8ed8-add4-46e5-94e3-65ca957ec86e/resourceGroups/RG-ZF-AVD/providers/Microsoft.Compute/galleries/trustedlaunch",
+            "type": "String"
+        },
+        "networkSecurityGroups_basicNsgVNET_ZF_AVD_nic01_externalid": {
+            "defaultValue": "/subscriptions/434a8ed8-add4-46e5-94e3-65ca957ec86e/resourceGroups/RG-ZF-AVD/providers/Microsoft.Network/networkSecurityGroups/basicNsgVNET-ZF-AVD-nic01",
+            "type": "String"
+        },
+        "virtualNetworks_VNET_ZF_AVD_externalid": {
+            "defaultValue": "/subscriptions/434a8ed8-add4-46e5-94e3-65ca957ec86e/resourceGroups/RG-ZF-AVD/providers/Microsoft.Network/virtualNetworks/VNET-ZF-AVD",
+            "type": "String"
+        },
+        "disks_VMSS_VMSS_0_OsDisk_1_9e3318fbc3e34ec28768a584e949d95e_externalid": {
+            "defaultValue": "/subscriptions/434a8ed8-add4-46e5-94e3-65ca957ec86e/resourceGroups/RG-ZF-AVD/providers/Microsoft.Compute/disks/VMSS_VMSS_0_OsDisk_1_9e3318fbc3e34ec28768a584e949d95e",
+            "type": "String"
+        },
+        "ouPath": {
+            "defaultValue": "OU=AVDJOIN,DC=jeffreydc,DC=com",
+            "type": "string"
+        },
+        "administratorAccountUsername":{
+            "defaultValue" : "azureadmin@jeffreydc.com",
+            "type": "string"
+        },
+        "administratorAccountPassword":{
+            "defaultValue": "q$9Bdaaz~5<",
+            "type": "securestring"
+        }
+
+
+    },
+    "variables": {
+        "domain": "jeffreydc.com"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Compute/virtualMachineScaleSets",
+            "apiVersion": "2022-03-01",
+            "name": "[parameters('virtualMachineScaleSets_VMSS_name')]",
+            "location": "eastasia",
+            "sku": {
+                "name": "Standard_D2s_v3",
+                "tier": "Standard",
+                "capacity": 1
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "singlePlacementGroup": false,
+                "upgradePolicy": {
+                    "mode": "Manual"
+                },
+                "scaleInPolicy": {
+                    "rules": [
+                        "Default"
+                    ]
+                },
+                "virtualMachineProfile": {
+                    "osProfile": {
+                        "computerNamePrefix": "MYVMSS2",
+                        "adminUsername": "azureadmin",
+                        "adminPassword": "P@ssw0ddrdqwddde12da3qwe11111233dd",
+                        "windowsConfiguration": {
+                            "provisionVMAgent": true,
+                            "enableAutomaticUpdates": true
+                        },
+                        "secrets": [],
+                        "allowExtensionOperations": true
+                    },
+                    "storageProfile": {
+                        "osDisk": {
+                            "osType": "Windows",
+                            "createOption": "FromImage",
+                            "caching": "ReadWrite",
+                            "managedDisk": {
+                                "storageAccountType": "Premium_LRS"
+                            },
+                            "diskSizeGB": 127
+                        },
+                        "imageReference": {
+                            "id": "[concat(parameters('galleries_trustedlaunch_externalid'), '/images/windows10')]"
+                        }
+                    },
+                    "networkProfile": {
+                        "networkInterfaceConfigurations": [
+                            {
+                                "name": "VNET-ZF-AVD-nic01",
+                                "properties": {
+                                    "primary": true,
+                                    "enableAcceleratedNetworking": true,
+                                    "networkSecurityGroup": {
+                                        "id": "[parameters('networkSecurityGroups_basicNsgVNET_ZF_AVD_nic01_externalid')]"
+                                    },
+                                    "dnsSettings": {
+                                        "dnsServers": []
+                                    },
+                                    "enableIPForwarding": false,
+                                    "ipConfigurations": [
+                                        {
+                                            "name": "VNET-ZF-AVD-nic01-defaultIpConfiguration",
+                                            "properties": {
+                                                "primary": true,
+                                                "subnet": {
+                                                    "id": "[concat(parameters('virtualNetworks_VNET_ZF_AVD_externalid'), '/subnets/SNET-HOSTPOOL')]"
+                                                },
+                                                "privateIPAddressVersion": "IPv4"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    "diagnosticsProfile": {
+                        "bootDiagnostics": {
+                            "enabled": true
+                        }
+                    },
+                    "extensionProfile": {
+                        "extensions": [
+                            {
+                                "name": "joindomain",
+                                "properties": {
+                                    "publisher": "Microsoft.Compute",
+                                    "type": "JsonADDomainExtension",
+                                    "typeHandlerVersion": "1.3",
+                                    "autoUpgradeMinorVersion": true,
+                                    "settings": {
+                                        "name": "[variables('domain')]",
+                                        "ouPath": "[parameters('ouPath')]",
+                                        "user": "[parameters('administratorAccountUsername')]",
+                                        "restart": "true",
+                                        "options": "3",
+                                        "NumberOfRetries": 4,
+                                        "RetryIntervalInMilliseconds": 30000
+                                    },
+                                    "protectedSettings": {
+                                        "password": "[parameters('administratorAccountPassword')]"
+                                    }
+                                }
+                            },
+                            {
+                                "name": "GuestAttestation",
+                                "properties": {
+                                    "autoUpgradeMinorVersion": true,
+                                    "publisher": "Microsoft.Azure.Security.WindowsAttestation",
+                                    "type": "GuestAttestation",
+                                    "typeHandlerVersion": "1.0",
+                                    "settings": {
+                                        "AttestationConfig": {
+                                            "MaaSettings": {
+                                                "maaEndpoint": "",
+                                                "maaTenantName": "GuestAttestation"
+                                            },
+                                            "AscSettings": {
+                                                "ascReportingEndpoint": "",
+                                                "ascReportingFrequency": ""
+                                            },
+                                            "useCustomToken": "false",
+                                            "disableAlerts": "false"
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    "licenseType": "Windows_Client",
+                    "securityProfile": {
+                        "uefiSettings": {
+                            "secureBootEnabled": true,
+                            "vTpmEnabled": true
+                        },
+                        "securityType": "TrustedLaunch"
+                    }
+                },
+                "overprovision": false,
+                "doNotRunExtensionsOnOverprovisionedVMs": false,
+                "platformFaultDomainCount": 1
+            }
+        }
+
+        
+    ]
+}
